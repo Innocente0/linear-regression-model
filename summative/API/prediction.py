@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-enable_request = BaseModel  # noqa: F841
+enable_request = BaseModel
 class PredictRequest(BaseModel):
     year: int = Field(
         ..., ge=2000, le=2030,
@@ -39,13 +39,13 @@ class PredictResponse(BaseModel):
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest):
-    # Create feature array
+    
     X = np.array([[request.year, request.deaths_median]])
-    # Scale input
+    
     Xs = scaler.transform(X)
-    # Model inference
+    
     y_pred = model.predict(Xs)[0]
-    # Validate output
+    
     if np.isnan(y_pred) or y_pred < 0:
         raise HTTPException(
             status_code=500,
