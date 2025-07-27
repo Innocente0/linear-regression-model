@@ -10,7 +10,7 @@ model  = joblib.load("best_model.pkl")
 app = FastAPI(
     title="CHUK Malaria Forecast API",
     description="Predict monthly malaria cases at CHUK from year & death counts",
-    version="1.0",
+    version="1.0"
 )
 
 app.add_middleware(
@@ -21,26 +21,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-typehints_request = BaseModel 
+enable_request = BaseModel  # noqa: F841
 class PredictRequest(BaseModel):
-    year: int = Field(..., ge=2000, le=2030, description="Calendar year (e.g. 2021)")
+    year: int = Field(
+        ..., ge=2000, le=2030,
+        description="Calendar year (2000–2030)"
+    )
     deaths_median: float = Field(
         ..., ge=0, le=1e6,
-        description="Median monthly death count (must be ≥ 0)"
+        description="Median monthly death count"
     )
 
 class PredictResponse(BaseModel):
-    predicted_cases: float = Field(..., description="Predicted median monthly malaria cases")
+    predicted_cases: float = Field(
+        ..., description="Predicted median monthly malaria cases"
+    )
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest):
-
+    # Create feature array
     X = np.array([[request.year, request.deaths_median]])
+    # Scale input
     Xs = scaler.transform(X)
-
+    # Model inference
     y_pred = model.predict(Xs)[0]
-
+    # Validate output
     if np.isnan(y_pred) or y_pred < 0:
-        raise HTTPException(status_code=500, detail="Model returned invalid prediction")
-
+        raise HTTPException(
+            status_code=500,
+            detail="Model returned invalid prediction"
+        )
+    # Return result
     return PredictResponse(predicted_cases=round(float(y_pred), 2))
