@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import numpy as np
 
@@ -17,16 +16,16 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["POST", "GET"],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
+typehints_request = BaseModel 
 class PredictRequest(BaseModel):
     year: int = Field(..., ge=2000, le=2030, description="Calendar year (e.g. 2021)")
     deaths_median: float = Field(
-        ...,
-        ge=0,
-        le=1e6,
+        ..., ge=0, le=1e6,
         description="Median monthly death count (must be ≥ 0)"
     )
 
@@ -35,7 +34,7 @@ class PredictResponse(BaseModel):
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest):
-    
+
     X = np.array([[request.year, request.deaths_median]])
     Xs = scaler.transform(X)
 
